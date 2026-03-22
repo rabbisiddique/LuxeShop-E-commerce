@@ -1,12 +1,11 @@
-'use client';
+"use client";
 
-import Image from 'next/image';
-import Link from 'next/link';
-import { useState, useEffect } from 'react';
-import { Star, ShoppingBag, ArrowRight } from 'lucide-react';
-import { supabase } from '@/src/lib/supabase/client';
-import { useCartStore } from '@/src/store/cart';
-import CountdownTimer from './CountdownTimer';
+import { useCartStore } from "@/src/store/cart";
+import { ArrowRight, ShoppingBag, Star } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import CountdownTimer from "./CountdownTimer";
 
 interface Product {
   id: string;
@@ -27,28 +26,28 @@ export default function DealOfTheDay() {
   useEffect(() => {
     async function fetchDeal() {
       try {
-        const { data, error } = await supabase
-          .from('products')
-          .select('*, category:categories(name)')
-          .eq('is_featured', true)
-          .not('compare_at_price', 'is', null)
-          .limit(1)
-          .single();
-
-        if (error) throw error;
-        setProduct(data);
+        // const { data, error } = await supabase
+        //   .from('products')
+        //   .select('*, category:categories(name)')
+        //   .eq('is_featured', true)
+        //   .not('compare_at_price', 'is', null)
+        //   .limit(1)
+        //   .single();
+        // if (error) throw error;
+        // setProduct(data);
       } catch (err) {
-        console.error('Error fetching deal:', err);
+        console.error("Error fetching deal:", err);
         // Mock fallback
         setProduct({
-          id: 'deal-1',
-          name: 'Premium Wireless Headphones Pro',
+          id: "deal-1",
+          name: "Premium Wireless Headphones Pro",
           price: 199,
           compare_at_price: 299,
-          image_url: 'https://picsum.photos/seed/headphones/600/600',
-          description: 'Experience studio-quality sound with active noise cancellation and 40-hour battery life.',
+          image_url: "https://picsum.photos/seed/headphones/600/600",
+          description:
+            "Experience studio-quality sound with active noise cancellation and 40-hour battery life.",
           stock: 12,
-          category: { name: 'Electronics' }
+          category: { name: "Electronics" },
         });
       } finally {
         setLoading(false);
@@ -75,7 +74,8 @@ export default function DealOfTheDay() {
             Deal of the Day
           </h2>
           <p className="text-sm text-[#9A9A9A] max-w-md mx-auto">
-            Prices reset at midnight. Don&apos;t miss out on these exclusive savings.
+            Prices reset at midnight. Don&apos;t miss out on these exclusive
+            savings.
           </p>
         </div>
 
@@ -103,19 +103,27 @@ export default function DealOfTheDay() {
             <h3 className="font-['Playfair_Display'] text-2xl lg:text-3xl font-bold text-white mb-4">
               {product.name}
             </h3>
-            
+
             <div className="flex items-center gap-2 mb-6">
               <div className="flex text-[#FF6B35]">
                 {[...Array(5)].map((_, i) => (
-                  <Star key={i} size={14} fill={i < 4 ? "currentColor" : "none"} />
+                  <Star
+                    key={i}
+                    size={14}
+                    fill={i < 4 ? "currentColor" : "none"}
+                  />
                 ))}
               </div>
               <span className="text-xs text-[#9A9A9A]">(128 Reviews)</span>
             </div>
 
             <div className="flex items-baseline gap-4 mb-6">
-              <span className="text-3xl lg:text-4xl font-bold text-[#FF6B35]">${product.price}</span>
-              <span className="text-xl text-[#9A9A9A] line-through">${product.compare_at_price}</span>
+              <span className="text-3xl lg:text-4xl font-bold text-[#FF6B35]">
+                ${product.price}
+              </span>
+              <span className="text-xl text-[#9A9A9A] line-through">
+                ${product.compare_at_price}
+              </span>
               <span className="bg-[#FF6B35]/15 text-[#FF6B35] text-[11px] font-bold px-3 py-1 rounded-full">
                 Save ${savings} ({savingsPercent}% off)
               </span>
@@ -128,11 +136,15 @@ export default function DealOfTheDay() {
             {/* Stock Progress */}
             <div className="mb-8">
               <div className="flex justify-between items-center mb-2">
-                <span className="text-xs font-bold text-white">Only {product.stock} left! Selling fast</span>
-                <span className="text-[10px] text-[#9A9A9A] uppercase tracking-wider">{Math.round(stockPercent)}% Claimed</span>
+                <span className="text-xs font-bold text-white">
+                  Only {product.stock} left! Selling fast
+                </span>
+                <span className="text-[10px] text-[#9A9A9A] uppercase tracking-wider">
+                  {Math.round(stockPercent)}% Claimed
+                </span>
               </div>
               <div className="w-full h-1.5 bg-[#2A2A2A] rounded-full overflow-hidden">
-                <div 
+                <div
                   className="h-full bg-[#FF6B35] transition-all duration-1000 ease-out"
                   style={{ width: `${stockPercent}%` }}
                 />
@@ -145,20 +157,22 @@ export default function DealOfTheDay() {
             </div>
 
             <div className="flex flex-col sm:flex-row items-center gap-4">
-              <button 
-                onClick={() => addItem({
-                  id: product.id,
-                  name: product.name,
-                  price: product.price,
-                  quantity: 1,
-                  image: product.image_url
-                })}
+              <button
+                onClick={() =>
+                  addItem({
+                    id: product.id,
+                    name: product.name,
+                    price: product.price,
+                    quantity: 1,
+                    image: product.image_url,
+                  })
+                }
                 className="w-full sm:flex-1 bg-[#FF6B35] text-white py-4 font-bold text-sm uppercase tracking-widest hover:bg-[#E55A25] transition-colors flex items-center justify-center gap-2"
               >
                 <ShoppingBag size={18} />
                 Add to Cart
               </button>
-              <Link 
+              <Link
                 href={`/products/${product.id}`}
                 className="text-white/60 hover:text-white text-sm font-medium flex items-center gap-2 transition-colors"
               >

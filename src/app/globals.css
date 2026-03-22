@@ -1,28 +1,33 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Playfair+Display:wght@400;600;700&display=swap');
+/* @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Playfair+Display:wght@400;600;700&display=swap'); */
 @import "tailwindcss";
 
 @theme {
   --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Playfair Display", serif;
-  
-  --color-primary: #FF6B35;
-  --color-primary-hover: #E55A25;
-  --color-primary-light: #FFF0EB;
-  
-  --color-neutral-950: #0D0D0D;
-  --color-neutral-800: #1F1F1F;
-  --color-neutral-600: #4B4B4B;
-  --color-neutral-400: #9A9A9A;
-  --color-neutral-200: #E8E8E8;
-  --color-neutral-100: #F5F5F5;
+
+  --color-primary: #ff6b35;
+  --color-primary-hover: #e55a25;
+  --color-primary-light: #fff0eb;
+
+  --color-neutral-950: #0d0d0d;
+  --color-neutral-800: #1f1f1f;
+  --color-neutral-600: #4b4b4b;
+  --color-neutral-400: #9a9a9a;
+  --color-neutral-200: #e8e8e8;
+  --color-neutral-100: #f5f5f5;
 }
 
 @layer base {
   body {
     @apply font-sans text-neutral-800 bg-white;
   }
-  
-  h1, h2, h3, h4, h5, h6 {
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-display;
   }
 }
@@ -34,8 +39,12 @@
 
 /* Shimmer animation for skeletons */
 @keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 .animate-shimmer {
