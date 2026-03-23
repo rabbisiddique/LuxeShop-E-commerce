@@ -1,17 +1,20 @@
-'use client';
+"use client";
 
-import React from 'react';
-import ProductTable from '@/src/components/admin/ProductTable';
-import { Plus, Download } from 'lucide-react';
-import Link from 'next/link';
+import ProductTable from "@/src/components/admin/ProductTable";
+import { Download, Plus } from "lucide-react";
+import Link from "next/link";
 
 export default function AdminProductsPage() {
   return (
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-display font-bold text-neutral-950">Products</h1>
-          <p className="text-neutral-500 mt-1">Manage your inventory, pricing, and product details.</p>
+          <h1 className="text-3xl font-display font-bold text-neutral-950">
+            Products
+          </h1>
+          <p className="text-neutral-500 mt-1">
+            Manage your inventory, pricing, and product details.
+          </p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -19,7 +22,7 @@ export default function AdminProductsPage() {
             <Download className="w-4 h-4" />
             Export CSV
           </button>
-          <Link 
+          <Link
             href="/admin/products/new"
             className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary-dark transition-all shadow-lg shadow-primary/20"
           >

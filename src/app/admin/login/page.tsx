@@ -1,6 +1,6 @@
 "use client";
 
-import { adminLoginAction } from "@/src/actions/admin.auth";
+import { adminLoginAction } from "@/src/actions/admin/admin.auth";
 import {
   ArrowLeft,
   Eye,
@@ -23,6 +23,7 @@ export default function AdminLoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const router = useRouter();
+
   const handleAdminLogin = async (
     e: React.FormEvent<HTMLFormElement>,
     email: string,
@@ -31,10 +32,13 @@ export default function AdminLoginPage() {
     e.preventDefault();
     try {
       setIsLoading(true);
-      const res = await adminLoginAction(email, password);
+      const res = await adminLoginAction({ email, password });
+      console.log(res);
+
       if (res.success) {
-        toast.success(" Welcome back! 👋");
+        // toast.success(" Welcome back! 👋");
         router.push("/admin");
+        toast.success(res.message);
       } else {
         toast.error(res.message);
       }
