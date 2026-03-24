@@ -74,6 +74,10 @@ export interface AddProductInput {
   // Status
   is_active: boolean;
   is_featured: boolean;
+
+  // Rating (auto calculated)
+  average_rating?: number;
+  review_count?: number;
 }
 
 // ─── Update Product ──────────────────────
