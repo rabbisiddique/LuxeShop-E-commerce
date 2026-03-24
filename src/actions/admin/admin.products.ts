@@ -79,21 +79,68 @@ export const addProduct = async (input: AddProductInput) => {
 
 // get products
 
-export const getProducts = async () => {
+export const getProducts = async (
+  page: number = 1,
+  limit: number = 10,
+  category?: string,
+  search?: string,
+  featured?: boolean,
+  active: boolean = true,
+) => {
   const supabase = await createClient();
+
+  const from = (page - 1) * limit;
+  const to = from + limit - 1;
+
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from("products")
       .select(
-        `*, categories(id, name, slug), product_variants(id, name, options, price, stock_quantity)`,
+        `
+        *,
+        categories (
+          id,
+          name,
+          slug
+        ),
+        product_variants (
+          id,
+          name,
+          options,
+          price,
+          stock_quantity
+        )
+      `,
+        { count: "exact" },
       )
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .range(from, to);
+
+    // Filters
+    if (active) {
+      query = query.eq("is_active", true);
+    }
+
+    if (category) {
+      query = query.eq("categories.slug", category);
+    }
+
+    if (search) {
+      query = query.ilike("name", `%${search}%`);
+    }
+
+    if (featured !== undefined) {
+      query = query.eq("is_featured", featured);
+    }
+
+    const { data, error, count } = await query;
 
     if (error) {
       return {
         success: false,
         message: error.message,
         data: [],
+        pagination: null,
       };
     }
 
@@ -101,12 +148,21 @@ export const getProducts = async () => {
       success: true,
       message: "Products fetched!",
       data,
+      pagination: {
+        page,
+        limit,
+        total: count ?? 0,
+        totalPages: Math.ceil((count ?? 0) / limit),
+        hasNext: page < Math.ceil((count ?? 0) / limit),
+        hasPrev: page > 1,
+      },
     };
   } catch (error) {
-    console.log("Error in addProduct actions");
     return {
       success: false,
       message: "Internal Server Error",
+      data: [],
+      pagination: null,
     };
   }
 };
@@ -165,7 +221,20 @@ export const updateProduct = async (
     const { data, error } = await supabase
       .from("products")
       .update({
-        ...input,
+        name: input.name,
+        slug: input.slug,
+        description: input.description,
+        category_id: input.category_id,
+        base_price: input.base_price,
+        compare_price: input.compare_price || null,
+        cost_price: input.cost_price || null,
+        sku: input.sku || null,
+        stock_quantity: input.stock_quantity,
+        images: input.images ?? [],
+        tags: input.tags ?? [],
+        is_active: input.is_active,
+        is_featured: input.is_featured,
+        has_variants: input.has_variants,
         updated_at: new Date().toISOString(),
       })
       .eq("id", id)
@@ -177,6 +246,35 @@ export const updateProduct = async (
         success: false,
         message: error.message,
       };
+    }
+
+    // Step 2: Update variants separately
+    if (input.has_variants && input.variants && input.variants.length > 0) {
+      // Delete old variants first
+      await supabaseAdmin
+        .from("product_variants")
+        .delete()
+        .eq("product_id", id);
+
+      // Insert new variants
+      const cleanVariants = input.variants.map((v: any) => ({
+        product_id: id,
+        name: String(v.name),
+        options: v.options ?? {},
+        price: Number(v.price) || Number(input.base_price),
+        stock_quantity: Number(v.stock_quantity) || 0,
+      }));
+
+      const { error: variantError } = await supabaseAdmin
+        .from("product_variants")
+        .insert(cleanVariants);
+
+      if (variantError) {
+        return {
+          success: false,
+          message: variantError.message,
+        };
+      }
     }
 
     return {
@@ -194,13 +292,28 @@ export const updateProduct = async (
 
 // get delete product
 
-export const deleteProduct = async (id: string) => {
-  const supabase = await createClient();
+// src/app/actions/admin/admin.products.ts
 
+export const deleteProduct = async (id: string) => {
   try {
-    // Variants deleted automatically
-    // via CASCADE foreign key
-    const { error } = await supabase.from("products").delete().eq("id", id);
+    // Step 1: Delete variants first
+    const { error: variantError } = await supabaseAdmin
+      .from("product_variants")
+      .delete()
+      .eq("product_id", id);
+
+    if (variantError) {
+      return {
+        success: false,
+        message: variantError.message,
+      };
+    }
+
+    // Step 2: Delete product
+    const { error } = await supabaseAdmin
+      .from("products")
+      .delete()
+      .eq("id", id);
 
     if (error) {
       return {
@@ -212,6 +325,47 @@ export const deleteProduct = async (id: string) => {
     return {
       success: true,
       message: "Product deleted!",
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: "Internal Server Error",
+    };
+  }
+};
+
+// Same for bulk delete
+export const deleteMultipleProducts = async (ids: string[]) => {
+  try {
+    // Step 1: Delete variants first
+    const { error: variantError } = await supabaseAdmin
+      .from("product_variants")
+      .delete()
+      .in("product_id", ids);
+
+    if (variantError) {
+      return {
+        success: false,
+        message: variantError.message,
+      };
+    }
+
+    // Step 2: Delete products
+    const { error } = await supabaseAdmin
+      .from("products")
+      .delete()
+      .in("id", ids);
+
+    if (error) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+
+    return {
+      success: true,
+      message: `${ids.length} products deleted!`,
     };
   } catch (error) {
     return {

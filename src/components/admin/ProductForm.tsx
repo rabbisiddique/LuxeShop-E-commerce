@@ -1,7 +1,13 @@
 "use client";
 
-import { ImageItem, ProductFormProps, Variant } from "@/index.type";
-import { addProduct } from "@/src/actions/admin/admin.products";
+import {
+  Category,
+  ImageItem,
+  Product,
+  ProductFormProps,
+  Variant,
+} from "@/index.type";
+import { addProduct, updateProduct } from "@/src/actions/admin/admin.products";
 import { deleteProductImage, uploadProductImage } from "@/src/actions/upload";
 import {
   DollarSign,
@@ -20,10 +26,20 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-export default function ProductForm({ categories }: ProductFormProps) {
+type ProductFormProps = {
+  categories: Category[];
+  mode: "create" | "edit";
+  initialData?: Product;
+};
+
+export default function ProductForm({
+  categories,
+  mode,
+  initialData,
+}: ProductFormProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [imageItems, setImageItems] = useState<ImageItem[]>([]);
@@ -73,7 +89,7 @@ export default function ProductForm({ categories }: ProductFormProps) {
     is_featured: false,
   });
 
-  const tabs = ["General", "Pricing", "Inventory", "Variants", "SEO"];
+  const tabs = ["General", "Pricing", "Inventory", "Variants"];
 
   const handleChange = (
     e:
@@ -342,18 +358,103 @@ export default function ProductForm({ categories }: ProductFormProps) {
     }
 
     setIsLoading(true);
+    if (mode === "edit") {
+      const result = await updateProduct(initialData?.id, formData);
+      console.log("res", result);
 
-    const result = await addProduct(formData);
-    console.log("res", result);
-
-    if (result.success) {
-      toast.success(result.message);
-      router.push("/admin/products");
+      if (result.success) {
+        toast.success(result.message);
+        router.push("/admin/products");
+      } else {
+        toast.error(result.message);
+        setIsLoading(false);
+      }
     } else {
-      toast.error(result.message);
-      setIsLoading(false);
+      const result = await addProduct(formData);
+      console.log("res", result);
+
+      if (result.success) {
+        toast.success(result.message);
+        router.push("/admin/products");
+      } else {
+        toast.error(result.message);
+        setIsLoading(false);
+      }
     }
   };
+
+  // useEffects
+
+  useEffect(() => {
+    if (mode !== "edit" || !initialData) return;
+
+    // ─── Form Data ───────────────────────
+    setFormData({
+      name: initialData.name ?? "",
+      slug: initialData.slug ?? "",
+      description: initialData.description ?? "",
+      category_id: initialData.category_id ?? "",
+      base_price: initialData.base_price ?? 0,
+      compare_price: initialData.compare_price ?? 0,
+      cost_price: initialData.cost_price ?? 0,
+      sku: initialData.sku ?? "",
+      stock_quantity: initialData.stock_quantity ?? 0,
+      images: initialData.images ?? [],
+      tags: initialData.tags ?? [],
+      has_variants: initialData.has_variants ?? false,
+      variants: initialData.product_variants ?? [],
+      is_active: initialData.is_active ?? true,
+      is_featured: initialData.is_featured ?? false,
+    });
+
+    // ─── Tags ────────────────────────────
+    setTags(initialData.tags ?? []);
+
+    // ─── Images ──────────────────────────
+    setImageItems(
+      (initialData.images ?? []).map((url: string) => ({
+        url,
+        uploading: false,
+      })),
+    );
+
+    // ─── Variants ────────────────────────
+    const productVariants = initialData.product_variants ?? [];
+
+    if (productVariants.length === 0) return;
+
+    // Group by option name using reduce
+    const grouped = productVariants.reduce(
+      (
+        acc: { id: number; name: string; values: string[] }[],
+        v: any,
+        i: number,
+      ) => {
+        const [optionName, optionValue] = v.name
+          .split(":")
+          .map((s: string) => s.trim());
+
+        const existing = acc.find(
+          (a) => a.name.toLowerCase() === optionName.toLowerCase(),
+        );
+
+        if (existing) {
+          existing.values.push(optionValue);
+        } else {
+          acc.push({
+            id: i + 1,
+            name: optionName.charAt(0).toUpperCase() + optionName.slice(1),
+            values: [optionValue],
+          });
+        }
+
+        return acc;
+      },
+      [],
+    );
+
+    setVariants(grouped);
+  }, [initialData, mode]);
 
   // ─── Render ──────────────────────────────
 
@@ -779,14 +880,11 @@ export default function ProductForm({ categories }: ProductFormProps) {
               className="w-full py-3 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary-dark transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <Save className="w-4 h-4" />
-              {isLoading ? "Saving..." : "Save Product"}
-            </button>
-            <button
-              type="button"
-              className="w-full py-3 bg-neutral-100 text-neutral-600 rounded-xl text-sm font-bold hover:bg-neutral-200 transition-all flex items-center justify-center gap-2"
-            >
-              <Eye className="w-4 h-4" />
-              Preview
+              {isLoading
+                ? "Saving..."
+                : mode === "edit"
+                  ? "Update Product"
+                  : "Save Product"}
             </button>
           </div>
         </section>

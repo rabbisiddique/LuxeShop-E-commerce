@@ -34,29 +34,58 @@ export interface AuthResponse {
 
 // Admin Categories and products
 
+// ─── Product Variant ─────────────────────
 export interface ProductVariant {
+  id?: string;
+  product_id?: string;
   name: string;
   options: Record<string, string>;
   price: number;
   stock_quantity: number;
 }
 
+// ─── Add Product ─────────────────────────
 export interface AddProductInput {
+  // Basic
   name: string;
   slug: string;
   description?: string;
+
+  // Organization
   category_id: string;
+  tags?: string[];
+
+  // Pricing
   base_price: number;
   compare_price?: number;
   cost_price?: number;
+
+  // Inventory
   sku?: string;
   stock_quantity: number;
+
+  // Media
   images?: string[];
-  tags?: string[];
-  is_active: boolean;
-  is_featured: boolean;
+
+  // Variants
   has_variants: boolean;
   variants?: ProductVariant[];
+
+  // Status
+  is_active: boolean;
+  is_featured: boolean;
+}
+
+// ─── Update Product ──────────────────────
+export type UpdateProductInput = Partial<AddProductInput>;
+
+// ─── Product (from DB) ───────────────────
+export interface Product extends AddProductInput {
+  id: string;
+  categories?: Category;
+  product_variants?: ProductVariant[];
+  created_at: string;
+  updated_at: string;
 }
 
 // Category
