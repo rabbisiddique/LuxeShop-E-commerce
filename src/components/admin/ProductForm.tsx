@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  Category,
-  ImageItem,
-  Product,
-  ProductFormProps,
-  Variant,
-} from "@/index.type";
+import { Category, ImageItem, Product, Variant } from "@/index.type";
 import { addProduct, updateProduct } from "@/src/actions/admin/admin.products";
 import { deleteProductImage, uploadProductImage } from "@/src/actions/upload";
 import {
@@ -92,11 +86,9 @@ export default function ProductForm({
   const tabs = ["General", "Pricing", "Inventory", "Variants"];
 
   const handleChange = (
-    e:
-      | React.ChangeEvent
-      | HTMLInputElement
-      | HTMLTextAreaElement
-      | HTMLSelectElement,
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
   ) => {
     const { name, value, type } = e.target;
     setFormData((prev) => ({
@@ -359,7 +351,7 @@ export default function ProductForm({
 
     setIsLoading(true);
     if (mode === "edit") {
-      const result = await updateProduct(initialData?.id, formData);
+      const result = await updateProduct(initialData!.id, formData);
       console.log("res", result);
 
       if (result.success) {

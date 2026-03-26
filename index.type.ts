@@ -21,6 +21,7 @@ export interface AdminUser {
   total_spent: number;
   is_active: boolean;
   marketing_emails: boolean;
+  is_banned: boolean;
   created_at: string;
   updated_at: string;
 }

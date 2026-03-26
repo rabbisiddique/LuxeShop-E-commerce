@@ -292,8 +292,6 @@ export const updateProduct = async (
 
 // get delete product
 
-// src/app/actions/admin/admin.products.ts
-
 export const deleteProduct = async (id: string) => {
   try {
     // Step 1: Delete variants first
