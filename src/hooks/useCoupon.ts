@@ -5,22 +5,27 @@ import { useEffect, useState } from "react";
 import { getCoupons } from "../actions/admin/admin.coupons";
 import { createClient } from "../lib/supabase/client";
 
-export const useCoupon = () => {
+export const useCoupon = (search: string) => {
   const [coupons, setCoupons] = useState<CouponInput[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Initial fetch (only once)
   useEffect(() => {
     const fetchCoupons = async () => {
-      const res = await getCoupons();
+      const res = await getCoupons(search);
       if (res.success) {
         setCoupons(res.data);
+      } else {
+        setCoupons([]);
       }
       setLoading(false);
     };
 
-    fetchCoupons();
-  }, []);
+    const timer = setTimeout(() => {
+      fetchCoupons();
+    }, 300); // wait 300ms after typing stops
+    return () => clearTimeout(timer);
+  }, [search]);
 
   // 🚀 Real-time WITHOUT refetch
   useEffect(() => {

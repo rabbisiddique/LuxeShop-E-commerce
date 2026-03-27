@@ -148,9 +148,9 @@ export const updateCoupon = async (input: CouponInput, couponId: string) => {
 };
 
 // get single coupons
-export const getCoupons = async () => {
+export const getCoupons = async (search?: string) => {
   try {
-    const { data, error } = await supabaseAdmin
+    let query = supabaseAdmin
       .from("coupons")
       .select(
         `
@@ -161,6 +161,12 @@ export const getCoupons = async () => {
       `,
       )
       .order("created_at", { ascending: false });
+
+    if (search && search.trim() !== "") {
+      query = query.ilike("code", `%${search.trim()}%`);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       return {

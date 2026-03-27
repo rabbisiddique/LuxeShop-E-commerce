@@ -10,10 +10,8 @@ import { useCategory } from "@/src/hooks/useCategory";
 import { useCoupon } from "@/src/hooks/useCoupon";
 import {
   Calendar,
-  ChevronDown,
   Copy,
   DollarSign,
-  Download,
   Edit2,
   Percent,
   Plus,
@@ -72,8 +70,9 @@ function calcTotalSaved(coupon: Coupon): number {
 
 export default function CouponsPage() {
   const [showModal, setShowModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const { categories } = useCategory();
-  const { coupons, loading } = useCoupon();
+  const { coupons, loading } = useCoupon(searchQuery);
   const [editCouponId, setEditCouponId] = useState<string | undefined>();
   const [editCouponData, setEditCouponData] = useState<Coupon | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -150,19 +149,11 @@ export default function CouponsPage() {
                 type="text"
                 placeholder="Search coupon codes..."
                 className="w-full h-10 pl-10 pr-4 bg-[#F5F5F5] border-transparent rounded-xl text-[13px] outline-none focus:bg-white focus:border-[#FF6B35] transition-all"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <button className="w-full sm:w-auto h-10 px-4 border border-[#E8E8E8] rounded-xl text-[13px] font-medium text-[#4B4B4B] flex items-center justify-between gap-2 hover:bg-[#F5F5F5]">
-              All Status <ChevronDown size={14} />
-            </button>
-            <button className="w-full sm:w-auto h-10 px-4 border border-[#E8E8E8] rounded-xl text-[13px] font-medium text-[#4B4B4B] flex items-center justify-between gap-2 hover:bg-[#F5F5F5]">
-              All Types <ChevronDown size={14} />
-            </button>
           </div>
-          <button className="h-10 px-4 border border-[#E8E8E8] rounded-xl text-[13px] font-medium text-[#4B4B4B] flex items-center gap-2 hover:bg-[#F5F5F5]">
-            <Download size={14} />
-            Export
-          </button>
         </div>
 
         {/* Loading State */}
