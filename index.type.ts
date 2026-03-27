@@ -117,3 +117,42 @@ export interface ImageItem {
   url: string;
   uploading: boolean;
 }
+
+// id                    UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+// code                  TEXT UNIQUE NOT NULL,
+// discount_type         TEXT DEFAULT 'percentage' NOT NULL,
+// discount_value        NUMERIC DEFAULT 0.00 NOT NULL,
+// usage_limit           INT4,
+// per_customer_limit    INT4 DEFAULT 1 NOT NULL,
+// minimum_order_amount  NUMERIC DEFAULT 0.00 NOT NULL,
+// start_date            TIMESTAMPTZ,
+// end_date              TIMESTAMPTZ,
+// no_expiry             BOOLEAN DEFAULT true NOT NULL,
+// status                TEXT DEFAULT 'draft' NOT NULL,
+// used_count            INT4 DEFAULT 0 NOT NULL,
+// created_at            TIMESTAMPTZ DEFAULT NOW(),
+// updated_at            TIMESTAMPTZ DEFAULT NOW(),
+
+// coupons type
+
+export interface Coupon {
+  id?: string;
+  code: string;
+  discount_type: "percentage" | "fixed" | "free_shipping";
+  discount_value: number;
+  usage_limit?: number | null;
+  per_customer_limit: number;
+  minimum_order_amount: number;
+  start_date?: string | null;
+  end_date?: string | null;
+  no_expiry: boolean;
+  status: "active" | "draft" | "scheduled";
+  used_count?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+// Separate input type for form
+export interface CouponInput extends Coupon {
+  applicable_categories?: string[]; // ← only in form
+}
