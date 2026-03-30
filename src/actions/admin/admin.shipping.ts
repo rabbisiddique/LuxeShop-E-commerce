@@ -70,3 +70,63 @@ export const updateShippingMethod = async (
     };
   }
 };
+
+export const deleteShippingMethod = async (shippingId: string) => {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from("shipping_methods")
+      .delete()
+      .eq("id", shippingId)
+      .select()
+      .single();
+
+    if (error) {
+      return {
+        success: false,
+        message: error.message,
+        data: null,
+      };
+    }
+    return {
+      success: true,
+      message: "Deleted Shipping Method!",
+      data,
+    };
+  } catch (error) {
+    console.log("Error in deleting shipping method in action");
+    return {
+      success: false,
+      data: null,
+    };
+  }
+};
+
+export const getShippingMethod = async (shippingId: string) => {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from("shipping_methods")
+      .select("*")
+      .eq("id", shippingId)
+      .select()
+      .single();
+
+    if (error) {
+      return {
+        success: false,
+        message: error.message,
+        data: null,
+      };
+    }
+    return {
+      success: true,
+      message: "Fetch Shipping Method!",
+      data,
+    };
+  } catch (error) {
+    console.log("Error in fetching shipping method in action");
+    return {
+      success: false,
+      data: null,
+    };
+  }
+};
