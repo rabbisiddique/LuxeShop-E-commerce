@@ -37,3 +37,36 @@ export const createShippingMethod = async (shippings: ShippingMethod) => {
     };
   }
 };
+
+export const updateShippingMethod = async (
+  shippings: ShippingMethod,
+  shippingId: string,
+) => {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from("shipping_methods")
+      .update({ shippings, updated_at: new Date().toISOString() })
+      .eq("id", shippingId)
+      .select()
+      .single();
+
+    if (error) {
+      return {
+        success: false,
+        message: error.message,
+        data: null,
+      };
+    }
+    return {
+      success: true,
+      message: "Updated Shipping Method!",
+      data,
+    };
+  } catch (error) {
+    console.log("Error in updating shipping method in action");
+    return {
+      success: false,
+      data: null,
+    };
+  }
+};
