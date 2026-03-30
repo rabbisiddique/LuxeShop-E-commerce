@@ -130,3 +130,69 @@ export const getShippingMethod = async (shippingId: string) => {
     };
   }
 };
+
+export const getShippingMethods = async () => {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from("shipping_methods")
+      .select("*");
+
+    if (error) {
+      return {
+        success: false,
+        message: error.message,
+        data: null,
+      };
+    }
+    return {
+      success: true,
+      message: "Shipping Method fetched!",
+      data,
+    };
+  } catch (error) {
+    console.log("Error in fetching shipping method in action");
+    return {
+      success: false,
+      data: null,
+    };
+  }
+};
+
+export const toggleShippingMethods = async (
+  shippingId: string,
+  is_active: boolean,
+) => {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from("shipping_methods")
+      .update({
+        is_active,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", shippingId)
+      .select()
+      .single();
+
+    if (error) {
+      return {
+        success: false,
+        message: error.message,
+        data: null,
+      };
+    }
+
+    return {
+      success: true,
+      message: is_active
+        ? "Shipping method enabled!"
+        : "Shipping method disabled!",
+      data,
+    };
+  } catch (error) {
+    console.log("Error in toggling shipping method in action");
+    return {
+      success: false,
+      data: null,
+    };
+  }
+};
