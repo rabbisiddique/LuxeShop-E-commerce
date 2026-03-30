@@ -1,19 +1,19 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import PageHeader from '@/src/components/shop/PageHeader';
-import FilterSidebar from '@/src/components/shop/FilterSidebar';
-import SortBar from '@/src/components/shop/SortBar';
-import ProductGrid from '@/src/components/shop/ProductGrid';
-import ActiveFilterChips from '@/src/components/shop/ActiveFilterChips';
+import ActiveFilterChips from "@/src/components/shop/ActiveFilterChips";
+import FilterSidebar from "@/src/components/shop/FilterSidebar";
+import PageHeader from "@/src/components/shop/PageHeader";
+import ProductGrid from "@/src/components/shop/ProductGrid";
+import SortBar from "@/src/components/shop/SortBar";
+import { useState } from "react";
 
 export default function ShopPage({ category }: { category?: string }) {
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   return (
     <div className="min-h-screen bg-[#FAFAFA]">
       <PageHeader category={category} />
-      
+
       <div className="max-w-[1280px] mx-auto px-4 sm:px-8 py-8">
         <div className="flex gap-8">
           {/* Sidebar */}

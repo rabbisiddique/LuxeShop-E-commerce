@@ -183,3 +183,17 @@ export interface StoreSettings {
     tiktok: string;
   };
 }
+
+// shipping methods
+// Types
+
+export interface ShippingMethod {
+  // id: string;
+  name: string;
+  description: string;
+  price: number;
+  shipping_type: "free_shipping" | "fixed_shipping";
+  estimated_days_min: number;
+  estimated_days_max: number;
+  is_active: boolean;
+}
