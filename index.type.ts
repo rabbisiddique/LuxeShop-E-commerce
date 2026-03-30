@@ -156,3 +156,30 @@ export interface Coupon {
 export interface CouponInput extends Coupon {
   applicable_categories?: string[]; // ← only in form
 }
+
+// settings
+// ─── Types ─────────────────────────────────────────────────────────
+
+export interface StoreSettings {
+  name: string;
+  tagline: string;
+  description: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  state: string;
+  country: string;
+  currency: string;
+  timezone: string;
+  logo_url: string | null;
+  favicon_url: string | null;
+  primary_color: string;
+  social: {
+    instagram: string;
+    twitter: string;
+    facebook: string;
+    youtube: string;
+    tiktok: string;
+  };
+}
