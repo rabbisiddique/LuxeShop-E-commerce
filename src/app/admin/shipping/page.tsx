@@ -3,84 +3,176 @@
 import {
   BarChart2,
   ChevronRight,
-  Clock,
   DollarSign,
   Edit2,
   Globe,
+  Loader2,
   Plus,
-  Store,
+  Save,
   Trash2,
   Truck,
   X,
-  Zap,
 } from "lucide-react";
 import { useState } from "react";
 
+import { ShippingMethod, ShippingType } from "@/index.type";
+import {
+  createShippingMethod,
+  deleteShippingMethod,
+  toggleShippingMethods,
+  updateShippingMethod,
+} from "@/src/actions/admin/admin.shipping";
+import ConfirmDialog from "@/src/components/admin/ConfirmDialog";
 import { Switch } from "@/src/components/ui/Switch";
+import { useShipping } from "@/src/hooks/useShipping";
+import {
+  formatPrice,
+  formatTime,
+  getIconBg,
+  getIconColor,
+  getMethodIcon,
+} from "@/src/lib/helper/shipping";
+import { toast } from "sonner";
+
+// ─── Default form ─────────────────────────────────────────────────────────────
+
+const defaultForm = {
+  name: "",
+  description: "",
+  price: 0.0,
+  shipping_type: "free_shipping" as ShippingType, // Use the ShippingType type
+  estimated_days_min: 0,
+  estimated_days_max: 0,
+  is_active: true,
+};
+
+// ─── Skeleton Card ────────────────────────────────────────────────────────────
+
+const SkeletonCard = () => (
+  <div className="bg-white border border-[#E8E8E8] rounded-2xl overflow-hidden animate-pulse">
+    <div className="bg-[#FAFAFA] px-5 py-4 border-b border-[#E8E8E8] flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-full bg-[#E8E8E8]" />
+        <div className="space-y-1.5">
+          <div className="h-3.5 w-32 bg-[#E8E8E8] rounded" />
+          <div className="h-3 w-20 bg-[#E8E8E8] rounded" />
+        </div>
+      </div>
+      <div className="flex items-center gap-3">
+        <div className="h-6 w-16 bg-[#E8E8E8] rounded-full" />
+        <div className="h-6 w-10 bg-[#E8E8E8] rounded-full" />
+      </div>
+    </div>
+    <div className="p-5 grid grid-cols-2 md:grid-cols-3 gap-6">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="space-y-1.5">
+          <div className="h-3 w-20 bg-[#E8E8E8] rounded" />
+          <div className="h-4 w-16 bg-[#E8E8E8] rounded" />
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ShippingMethodsPage() {
+  const { shipping, isLoading, error, setShipping } = useShipping();
   const [showModal, setShowModal] = useState(false);
-  const [priceType, setPriceType] = useState("fixed");
+  const [priceType, setPriceType] = useState("free");
   const [isMethodEnabled, setIsMethodEnabled] = useState(true);
-  const [methods, setMethods] = useState([
-    {
-      id: 1,
-      name: "Standard Delivery",
-      time: "3–5 Business Days",
-      price: "FREE",
-      minOrder: "$0.00",
-      orders: "284 orders",
-      active: true,
-      popular: true,
-      icon: Truck,
-      iconBg: "bg-[#EFF6FF]",
-      iconColor: "text-[#2563EB]",
-    },
-    {
-      id: 2,
-      name: "Express Delivery",
-      time: "1–2 Business Days",
-      price: "$9.99",
-      minOrder: "$0.00",
-      orders: "156 orders",
-      active: true,
-      popular: false,
-      icon: Zap,
-      iconBg: "bg-[#FFF0EB]",
-      iconColor: "text-[#FF6B35]",
-    },
-    {
-      id: 3,
-      name: "Same Day Delivery",
-      time: "Today",
-      price: "$19.99",
-      minOrder: "$50.00",
-      orders: "42 orders",
-      active: true,
-      popular: false,
-      icon: Clock,
-      iconBg: "bg-[#FFFBEB]",
-      iconColor: "text-[#D97706]",
-    },
-    {
-      id: 4,
-      name: "Store Pickup",
-      time: "2 hrs",
-      price: "FREE",
-      minOrder: "$0.00",
-      orders: "89 orders",
-      active: false,
-      popular: false,
-      icon: Store,
-      iconBg: "bg-[#F0FDF4]",
-      iconColor: "text-[#16A34A]",
-    },
-  ]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [formData, setFormData] = useState(defaultForm);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
-  const toggleMethod = (id: number) => {
-    setMethods((prev) =>
-      prev.map((m) => (m.id === id ? { ...m, active: !m.active } : m)),
-    );
+  const handleSubmit = async () => {
+    if (!formData.name.trim()) {
+      toast.error("Method name is required");
+      return;
+    }
+    setIsSaving(true);
+    try {
+      if (editId) {
+        const res = await updateShippingMethod(formData, editId);
+        if (res.success) {
+          toast.success(res.message);
+          handleClose();
+        } else {
+          toast.error(res.message);
+        }
+        return; // ✅ stop here — don't fall through to create
+      }
+      const res = await createShippingMethod(formData);
+      if (res.success) {
+        toast.success(res.message);
+        handleClose();
+      } else {
+        toast.error(res.message);
+      }
+    } catch (err) {
+      console.error("Error creating shipping method:", err);
+      toast.error("Something went wrong");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleEdit = (method: ShippingMethod) => {
+    setEditId(method.id);
+    setPriceType(method.shipping_type === "fixed_shipping" ? "fixed" : "free"); // ✅ add this
+    setIsMethodEnabled(method.is_active);
+    setFormData({
+      name: method.name,
+      description: method.description ?? "",
+      price: method.price,
+      shipping_type: method.shipping_type,
+      estimated_days_min: method.estimated_days_min,
+      estimated_days_max: method.estimated_days_max,
+      is_active: method.is_active,
+    });
+    setShowModal(true);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    setIsDeleting(true);
+
+    const result = await deleteShippingMethod(deleteId);
+
+    if (result.success) {
+      toast.success(result.message);
+      setDeleteId(null);
+    } else {
+      toast.error(result.message);
+    }
+
+    setIsDeleting(false);
+  };
+
+  const handleClose = () => {
+    setShowModal(false);
+    setPriceType("free"); // ✅ reset
+    setIsMethodEnabled(true); // ✅ reset to default
+
+    setEditId(null);
+    setFormData(defaultForm);
+  };
+
+  const handleToggle = async (id: string, newValue: boolean) => {
+    setTogglingId(id); // ✅ start loading
+    const result = await toggleShippingMethods(id, newValue);
+    if (result.success) {
+      setShipping((prev) =>
+        prev.map((m) => (m.id === id ? { ...m, is_active: newValue } : m)),
+      );
+      toast.success(result.message);
+    } else {
+      toast.error(result.message);
+    }
+    setTogglingId(null); // ✅ stop loading
   };
 
   return (
@@ -137,107 +229,155 @@ export default function ShippingMethodsPage() {
 
         {/* Shipping Methods List */}
         <div className="space-y-4">
-          {methods.map((method) => {
-            const Icon = method.icon;
-            return (
-              <div
-                key={method.id}
-                className={`bg-white border border-[#E8E8E8] rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] ${!method.active ? "opacity-70 border-dashed" : ""}`}
+          {isLoading ? (
+            // Skeleton loading
+            [1, 2, 3].map((i) => <SkeletonCard key={i} />)
+          ) : error ? (
+            // Error state
+            <div className="bg-white border border-[#FEE2E2] rounded-2xl p-10 text-center">
+              <p className="text-[15px] font-semibold text-[#DC2626]">
+                Failed to load shipping methods
+              </p>
+              <p className="text-[13px] text-[#9A9A9A] mt-1">{error}</p>
+            </div>
+          ) : shipping.length === 0 ? (
+            // Empty state
+            <div className="bg-white border border-dashed border-[#E8E8E8] rounded-2xl p-16 text-center">
+              <div className="w-14 h-14 bg-[#FFF0EB] rounded-full flex items-center justify-center mx-auto mb-4">
+                <Truck size={26} className="text-[#FF6B35]" />
+              </div>
+              <p className="text-[16px] font-bold text-[#0D0D0D]">
+                No shipping methods yet
+              </p>
+              <p className="text-[13px] text-[#9A9A9A] mt-1 mb-5">
+                Add your first shipping option to start accepting orders
+              </p>
+              <button
+                onClick={() => setShowModal(true)}
+                className="h-10 px-5 bg-[#FF6B35] text-white rounded-xl text-[13px] font-bold hover:bg-[#E55A25] transition-colors inline-flex items-center gap-2"
               >
-                {/* Card Header */}
-                <div className="bg-[#FAFAFA] px-5 py-4 border-b border-[#E8E8E8] flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center ${method.iconBg} ${method.iconColor}`}
-                    >
-                      <Icon size={20} />
+                <Plus size={14} />
+                Add Method
+              </button>
+            </div>
+          ) : (
+            // Actual data
+            shipping.map((method) => {
+              const Icon = getMethodIcon(method.name);
+              const price = formatPrice(method);
+              const time = formatTime(
+                method.estimated_days_min,
+                method.estimated_days_max,
+              );
+
+              return (
+                <div
+                  key={method.id}
+                  className={`bg-white border border-[#E8E8E8] rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] ${!method.is_active ? "opacity-70 border-dashed" : ""}`}
+                >
+                  {/* Card Header */}
+                  <div className="bg-[#FAFAFA] px-5 py-4 border-b border-[#E8E8E8] flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`w-10 h-10 rounded-full flex items-center justify-center ${getIconBg(method.name)} ${getIconColor(method.name)}`}
+                      >
+                        <Icon size={20} />
+                      </div>
+                      <div>
+                        <h3 className="text-[15px] font-bold text-[#0D0D0D]">
+                          {method.name}
+                        </h3>
+                        <p className="text-[13px] text-[#9A9A9A] mt-0.5">
+                          {method.description || time}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider ${method.is_active ? "bg-[#F0FDF4] text-[#16A34A]" : "bg-[#F5F5F5] text-[#9A9A9A]"}`}
+                      >
+                        {method.is_active ? "Active" : "Inactive"}
+                      </span>
+                      {togglingId === method.id ? (
+                        <div className="w-10 h-6 flex items-center justify-center">
+                          <div className="w-4 h-4 border-2 border-[#FF6B35] border-t-transparent rounded-full animate-spin" />
+                        </div>
+                      ) : (
+                        <Switch
+                          checked={method.is_active}
+                          onCheckedChange={() =>
+                            handleToggle(method.id, !method.is_active)
+                          }
+                        />
+                      )}
+                      <div className="w-[1px] h-6 bg-[#E8E8E8] mx-1" />
+                      <button
+                        onClick={() => handleEdit(method)}
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-[#9A9A9A] hover:bg-[#FFF0EB] hover:text-[#FF6B35] transition-all"
+                      >
+                        <Edit2 size={15} />
+                      </button>
+                      <button
+                        onClick={() => {
+                          setDeleteId(method.id);
+                        }}
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-[#9A9A9A] hover:bg-[#FEF2F2] hover:text-[#DC2626] transition-all"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Card Body */}
+                  <div className="p-5 grid grid-cols-2 md:grid-cols-3 gap-6">
+                    <div>
+                      <span className="text-[11px] font-bold text-[#9A9A9A] uppercase tracking-[0.6px] block mb-1.5">
+                        Price
+                      </span>
+                      <span
+                        className={`text-[15px] font-bold ${price === "FREE" ? "text-[#16A34A]" : "text-[#0D0D0D]"}`}
+                      >
+                        {price}
+                      </span>
                     </div>
                     <div>
-                      <h3 className="text-[15px] font-bold text-[#0D0D0D]">
-                        {method.name}
-                      </h3>
-                      <p className="text-[13px] text-[#9A9A9A] mt-0.5">
-                        {method.time}
-                      </p>
+                      <span className="text-[11px] font-bold text-[#9A9A9A] uppercase tracking-[0.6px] block mb-1.5">
+                        Delivery Time
+                      </span>
+                      <span className="text-[15px] font-bold text-[#0D0D0D]">
+                        {time}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[11px] font-bold text-[#9A9A9A] uppercase tracking-[0.6px] block mb-1.5">
+                        Type
+                      </span>
+                      <span className="text-[15px] font-bold text-[#0D0D0D] capitalize">
+                        {method.shipping_type === "free_shipping"
+                          ? "Free Shipping"
+                          : "Fixed Price"}
+                      </span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span
-                      className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider ${method.active ? "bg-[#F0FDF4] text-[#16A34A]" : "bg-[#F5F5F5] text-[#9A9A9A]"}`}
-                    >
-                      {method.active ? "Active" : "Inactive"}
-                    </span>
-                    <Switch
-                      checked={method.active}
-                      onCheckedChange={() => toggleMethod(method.id)}
-                    />
-                    <div className="w-[1px] h-6 bg-[#E8E8E8] mx-1" />
-                    <button className="w-8 h-8 rounded-full flex items-center justify-center text-[#9A9A9A] hover:bg-[#FFF0EB] hover:text-[#FF6B35] transition-all">
-                      <Edit2 size={15} />
-                    </button>
-                    <button className="w-8 h-8 rounded-full flex items-center justify-center text-[#9A9A9A] hover:bg-[#FEF2F2] hover:text-[#DC2626] transition-all">
-                      <Trash2 size={15} />
+
+                  {/* Card Footer */}
+                  <div className="px-5 py-3 border-t border-[#F5F5F5] bg-[#FAFAFA] flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <BarChart2 size={13} className="text-[#9A9A9A]" />
+                      <span className="text-[12px] text-[#9A9A9A]">
+                        {method.shipping_type === "free_shipping"
+                          ? "Free shipping method"
+                          : `Fixed rate · $${method.price.toFixed(2)}`}
+                      </span>
+                    </div>
+                    <button className="text-[13px] font-semibold text-[#FF6B35] hover:underline">
+                      Edit Details →
                     </button>
                   </div>
                 </div>
-
-                {/* Card Body */}
-                <div className="p-5 grid grid-cols-2 md:grid-cols-4 gap-6">
-                  <div>
-                    <span className="text-[11px] font-bold text-[#9A9A9A] uppercase tracking-[0.6px] block mb-1.5">
-                      Price
-                    </span>
-                    <span
-                      className={`text-[15px] font-bold ${method.price === "FREE" ? "text-[#16A34A]" : "text-[#0D0D0D]"}`}
-                    >
-                      {method.price}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[11px] font-bold text-[#9A9A9A] uppercase tracking-[0.6px] block mb-1.5">
-                      Delivery Time
-                    </span>
-                    <span className="text-[15px] font-bold text-[#0D0D0D]">
-                      {method.time}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[11px] font-bold text-[#9A9A9A] uppercase tracking-[0.6px] block mb-1.5">
-                      Min Order
-                    </span>
-                    <span className="text-[15px] font-bold text-[#0D0D0D]">
-                      {method.minOrder}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[11px] font-bold text-[#9A9A9A] uppercase tracking-[0.6px] block mb-1.5">
-                      Orders This Month
-                    </span>
-                    <span className="text-[15px] font-bold text-[#FF6B35]">
-                      {method.orders}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Card Footer */}
-                <div className="px-5 py-3 border-t border-[#F5F5F5] bg-[#FAFAFA] flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    {method.popular && (
-                      <>
-                        <BarChart2 size={13} className="text-[#9A9A9A]" />
-                        <span className="text-[12px] text-[#9A9A9A]">
-                          Most popular method · 42% of orders
-                        </span>
-                      </>
-                    )}
-                  </div>
-                  <button className="text-[13px] font-semibold text-[#FF6B35] hover:underline">
-                    Edit Details →
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
 
         {/* Shipping Zones Section */}
@@ -255,7 +395,6 @@ export default function ShippingMethodsPage() {
               Add Zone
             </button>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-white border border-[#E8E8E8] rounded-xl p-5 flex items-center justify-between">
               <div className="flex items-center gap-4">
@@ -281,7 +420,6 @@ export default function ShippingMethodsPage() {
               </div>
               <ChevronRight size={18} className="text-[#E8E8E8]" />
             </div>
-
             <div className="bg-white border border-[#E8E8E8] rounded-xl p-5 flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="w-8 h-8 flex items-center justify-center text-[#9A9A9A]">
@@ -312,7 +450,7 @@ export default function ShippingMethodsPage() {
         </div>
       </div>
 
-      {/* Add/Edit Shipping Method Modal */}
+      {/* Add Shipping Method Modal */}
       {showModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div
@@ -341,6 +479,10 @@ export default function ShippingMethodsPage() {
                   type="text"
                   placeholder="e.g. Express Delivery"
                   className="w-full h-11 px-4 bg-white border border-[#E8E8E8] rounded-xl text-[14px] outline-none focus:border-[#FF6B35]"
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
                 />
               </div>
 
@@ -352,6 +494,10 @@ export default function ShippingMethodsPage() {
                   type="text"
                   placeholder="1–2 business days"
                   className="w-full h-11 px-4 bg-white border border-[#E8E8E8] rounded-xl text-[14px] outline-none focus:border-[#FF6B35]"
+                  value={formData.description}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
                 />
               </div>
 
@@ -361,8 +507,15 @@ export default function ShippingMethodsPage() {
                 </label>
                 <div className="grid grid-cols-2 gap-3">
                   <button
-                    onClick={() => setPriceType("free")}
-                    className={`p-4 border-1.5 rounded-xl flex flex-col items-center gap-2 transition-all ${priceType === "free" ? "bg-[#FFF0EB] border-[#FF6B35]" : "bg-white border-[#E8E8E8] hover:border-[#FF6B35]"}`}
+                    onClick={() => {
+                      setPriceType("free");
+                      setFormData({
+                        ...formData,
+                        shipping_type: "free_shipping",
+                        price: 0,
+                      });
+                    }}
+                    className={`p-4 border-2 rounded-xl flex flex-col items-center gap-2 transition-all ${priceType === "free" ? "bg-[#FFF0EB] border-[#FF6B35]" : "bg-white border-[#E8E8E8] hover:border-[#FF6B35]"}`}
                   >
                     <Truck
                       size={20}
@@ -379,8 +532,14 @@ export default function ShippingMethodsPage() {
                     </span>
                   </button>
                   <button
-                    onClick={() => setPriceType("fixed")}
-                    className={`p-4 border-1.5 rounded-xl flex flex-col items-center gap-2 transition-all ${priceType === "fixed" ? "bg-[#EFF6FF] border-[#2563EB]" : "bg-white border-[#E8E8E8] hover:border-[#2563EB]"}`}
+                    onClick={() => {
+                      setPriceType("fixed");
+                      setFormData({
+                        ...formData,
+                        shipping_type: "fixed_shipping",
+                      });
+                    }}
+                    className={`p-4 border-2 rounded-xl flex flex-col items-center gap-2 transition-all ${priceType === "fixed" ? "bg-[#EFF6FF] border-[#2563EB]" : "bg-white border-[#E8E8E8] hover:border-[#2563EB]"}`}
                   >
                     <DollarSign
                       size={20}
@@ -409,9 +568,16 @@ export default function ShippingMethodsPage() {
                       $
                     </span>
                     <input
-                      type="text"
+                      type="number"
                       placeholder="0.00"
                       className="w-full h-11 pl-8 pr-4 bg-white border border-[#E8E8E8] rounded-xl text-[14px] outline-none focus:border-[#FF6B35]"
+                      value={formData.price}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          price: parseFloat(e.target.value) || 0,
+                        })
+                      }
                     />
                   </div>
                 </div>
@@ -425,7 +591,14 @@ export default function ShippingMethodsPage() {
                   <input
                     type="number"
                     placeholder="1"
-                    className="w-full h-11 px-4 bg-white border border-[#E8E8E8] rounded-xl text-[14px] outline-none"
+                    className="w-full h-11 px-4 bg-white border border-[#E8E8E8] rounded-xl text-[14px] outline-none focus:border-[#FF6B35]"
+                    value={formData.estimated_days_min}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        estimated_days_min: parseInt(e.target.value) || 0,
+                      })
+                    }
                   />
                 </div>
                 <div className="space-y-2">
@@ -435,28 +608,16 @@ export default function ShippingMethodsPage() {
                   <input
                     type="number"
                     placeholder="2"
-                    className="w-full h-11 px-4 bg-white border border-[#E8E8E8] rounded-xl text-[14px] outline-none"
+                    className="w-full h-11 px-4 bg-white border border-[#E8E8E8] rounded-xl text-[14px] outline-none focus:border-[#FF6B35]"
+                    value={formData.estimated_days_max}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        estimated_days_max: parseInt(e.target.value) || 0,
+                      })
+                    }
                   />
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[13px] font-semibold text-[#4B4B4B]">
-                  Min Order Amount
-                </label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[14px] text-[#9A9A9A]">
-                    $
-                  </span>
-                  <input
-                    type="text"
-                    placeholder="0.00"
-                    className="w-full h-11 pl-8 pr-4 bg-white border border-[#E8E8E8] rounded-xl text-[14px] outline-none focus:border-[#FF6B35]"
-                  />
-                </div>
-                <p className="text-[11px] text-[#9A9A9A]">
-                  Leave 0 for no minimum
-                </p>
               </div>
 
               <div className="flex items-center justify-between pt-2">
@@ -465,7 +626,10 @@ export default function ShippingMethodsPage() {
                 </span>
                 <Switch
                   checked={isMethodEnabled}
-                  onCheckedChange={setIsMethodEnabled}
+                  onCheckedChange={(value) => {
+                    setFormData({ ...formData, is_active: !!value });
+                    setIsMethodEnabled(!!value);
+                  }}
                 />
               </div>
             </div>
@@ -477,13 +641,38 @@ export default function ShippingMethodsPage() {
               >
                 Cancel
               </button>
-              <button className="h-11 px-6 bg-[#FF6B35] text-white rounded-xl text-[14px] font-bold hover:bg-[#E55A25] transition-all">
-                Save Method
+              <button
+                onClick={handleSubmit}
+                disabled={isSaving}
+                className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-white bg-primary hover:bg-primary-dark rounded-xl transition-all shadow-lg shadow-primary/20 disabled:opacity-50"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    {editId ? "Update" : "Add Method"}
+                  </>
+                )}
               </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Delete Dialog */}
+      <ConfirmDialog
+        isOpen={!!deleteId}
+        title="Delete Shipping Method"
+        description="Are you sure you want to delete this shipping method? This cannot be undone."
+        confirmLabel="Delete Method"
+        isLoading={isDeleting}
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteId(null)}
+      />
     </div>
   );
 }

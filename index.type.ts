@@ -186,11 +186,22 @@ export interface StoreSettings {
 
 // shipping methods
 // Types
+export type ShippingType = "free_shipping" | "fixed_shipping";
 
 export interface ShippingMethod {
-  // id: string;
+  id: string;
   name: string;
-  description: string;
+  description?: string;
+  price: number;
+  shipping_type: ShippingType;
+  estimated_days_min: number;
+  estimated_days_max: number;
+  is_active: boolean;
+}
+
+export interface CreateShippingInput {
+  name: string;
+  description?: string;
   price: number;
   shipping_type: "free_shipping" | "fixed_shipping";
   estimated_days_min: number;

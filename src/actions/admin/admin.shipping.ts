@@ -3,7 +3,9 @@
 import { ShippingMethod } from "@/index.type";
 import { supabaseAdmin } from "@/src/lib/supabase/admin";
 
-export const createShippingMethod = async (shippings: ShippingMethod) => {
+export const createShippingMethod = async (
+  shippings: Omit<ShippingMethod, "id" | "created_at" | "updated_at">,
+) => {
   try {
     const { data, error } = await supabaseAdmin
       .from("shipping_methods")
@@ -39,16 +41,23 @@ export const createShippingMethod = async (shippings: ShippingMethod) => {
 };
 
 export const updateShippingMethod = async (
-  shippings: ShippingMethod,
+  shippings: Omit<ShippingMethod, "id" | "created_at" | "updated_at">,
   shippingId: string,
 ) => {
   try {
     const { data, error } = await supabaseAdmin
       .from("shipping_methods")
-      .update({ shippings, updated_at: new Date().toISOString() })
-      .eq("id", shippingId)
-      .select()
-      .single();
+      .update({
+        name: shippings.name,
+        description: shippings.description,
+        price: shippings.price,
+        estimated_days_min: shippings.estimated_days_min,
+        estimated_days_max: shippings.estimated_days_max,
+        shipping_type: shippings.shipping_type,
+        is_active: shippings.is_active,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", shippingId);
 
     if (error) {
       return {
@@ -60,7 +69,6 @@ export const updateShippingMethod = async (
     return {
       success: true,
       message: "Updated Shipping Method!",
-      data,
     };
   } catch (error) {
     console.log("Error in updating shipping method in action");
@@ -101,41 +109,12 @@ export const deleteShippingMethod = async (shippingId: string) => {
   }
 };
 
-export const getShippingMethod = async (shippingId: string) => {
-  try {
-    const { data, error } = await supabaseAdmin
-      .from("shipping_methods")
-      .select("*")
-      .eq("id", shippingId)
-      .select()
-      .single();
-
-    if (error) {
-      return {
-        success: false,
-        message: error.message,
-        data: null,
-      };
-    }
-    return {
-      success: true,
-      message: "Fetch Shipping Method!",
-      data,
-    };
-  } catch (error) {
-    console.log("Error in fetching shipping method in action");
-    return {
-      success: false,
-      data: null,
-    };
-  }
-};
-
 export const getShippingMethods = async () => {
   try {
     const { data, error } = await supabaseAdmin
       .from("shipping_methods")
-      .select("*");
+      .select("*")
+      .order("created_at", { ascending: false });
 
     if (error) {
       return {
