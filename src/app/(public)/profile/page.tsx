@@ -1,20 +1,20 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import ProfileHeader from '@/src/components/account/ProfileHeader';
-import AccountNav from '@/src/components/account/AccountNav';
-import OrderCard from '@/src/components/account/OrderCard';
-import OrderTimeline from '@/src/components/account/OrderTimeline';
-import AddressCard from '@/src/components/account/AddressCard';
-import WishlistGrid from '@/src/components/account/WishlistGrid';
+import AccountNav from "@/src/components/account/AccountNav";
+import AddressCard from "@/src/components/account/AddressCard";
+import OrderCard from "@/src/components/account/OrderCard";
+import OrderTimeline from "@/src/components/account/OrderTimeline";
+import ProfileHeader from "@/src/components/account/ProfileHeader";
+import WishlistGrid from "@/src/components/account/WishlistGrid";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 
 function AccountContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const tabParam = searchParams?.get('tab');
-  
-  const [activeTab, setActiveTab] = useState(tabParam || 'Overview');
+  const tabParam = searchParams?.get("tab");
+
+  const [activeTab, setActiveTab] = useState(tabParam || "Overview");
 
   useEffect(() => {
     if (tabParam) {
@@ -29,14 +29,16 @@ function AccountContent() {
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'Overview':
+      case "Overview":
         return (
           <div className="space-y-12">
             <section id="orders">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="font-['Playfair_Display'] text-[24px] font-bold text-[#0D0D0D]">Recent Orders</h2>
-                <button 
-                  onClick={() => handleTabChange('Orders')}
+                <h2 className=" text-[24px] font-bold text-[#0D0D0D]">
+                  Recent Orders
+                </h2>
+                <button
+                  onClick={() => handleTabChange("Orders")}
                   className="text-[14px] font-semibold text-[#FF6B35] hover:underline"
                 >
                   View All
@@ -47,12 +49,14 @@ function AccountContent() {
                 <OrderTimeline />
               </div>
             </section>
-            
+
             <section id="wishlist-preview">
-               <div className="flex items-center justify-between mb-6">
-                <h2 className="font-['Playfair_Display'] text-[24px] font-bold text-[#0D0D0D]">Wishlist Preview</h2>
-                <button 
-                  onClick={() => handleTabChange('Wishlist')}
+              <div className="flex items-center justify-between mb-6">
+                <h2 className=" text-[24px] font-bold text-[#0D0D0D]">
+                  Wishlist Preview
+                </h2>
+                <button
+                  onClick={() => handleTabChange("Wishlist")}
                   className="text-[14px] font-semibold text-[#FF6B35] hover:underline"
                 >
                   View Wishlist
@@ -62,11 +66,13 @@ function AccountContent() {
             </section>
           </div>
         );
-      case 'Orders':
+      case "Orders":
         return (
           <section id="orders">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="font-['Playfair_Display'] text-[24px] font-bold text-[#0D0D0D]">My Orders</h2>
+              <h2 className=" text-[24px] font-bold text-[#0D0D0D]">
+                My Orders
+              </h2>
             </div>
             <div className="space-y-6">
               <OrderCard />
@@ -74,20 +80,24 @@ function AccountContent() {
             </div>
           </section>
         );
-      case 'Wishlist':
+      case "Wishlist":
         return (
           <section id="wishlist">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="font-['Playfair_Display'] text-[24px] font-bold text-[#0D0D0D]">My Wishlist</h2>
+              <h2 className=" text-[24px] font-bold text-[#0D0D0D]">
+                My Wishlist
+              </h2>
             </div>
             <WishlistGrid />
           </section>
         );
-      case 'Addresses':
+      case "Addresses":
         return (
           <section id="addresses">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="font-['Playfair_Display'] text-[24px] font-bold text-[#0D0D0D]">My Addresses</h2>
+              <h2 className=" text-[24px] font-bold text-[#0D0D0D]">
+                My Addresses
+              </h2>
             </div>
             <AddressCard />
           </section>
@@ -114,9 +124,7 @@ function AccountContent() {
           </div>
 
           {/* Main Content Area */}
-          <div className="flex-1">
-            {renderContent()}
-          </div>
+          <div className="flex-1">{renderContent()}</div>
         </div>
       </div>
     </main>
@@ -125,7 +133,13 @@ function AccountContent() {
 
 export default function AccountPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center">Loading...</div>}>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center">
+          Loading...
+        </div>
+      }
+    >
       <AccountContent />
     </Suspense>
   );

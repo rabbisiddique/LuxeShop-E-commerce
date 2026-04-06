@@ -1,5 +1,6 @@
 "use client";
 
+import { createRegisterAction } from "@/src/actions/public/public.auth";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   AlertCircle,
@@ -7,7 +8,6 @@ import {
   CheckCircle,
   Eye,
   EyeOff,
-  Loader2,
   Lock,
   Mail,
   ShoppingBag,
@@ -18,41 +18,33 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import * as z from "zod";
 
-const registerSchema = z
-  .object({
-    firstName: z.string().min(2, "First name must be at least 2 characters"),
-    lastName: z.string().min(2, "Last name must be at least 2 characters"),
-    email: z.string().email("Please enter a valid email address"),
-    password: z
-      .string()
-      .min(8, "Password must be at least 8 characters")
-      .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-      .regex(/[0-9]/, "Password must contain at least one number")
-      .regex(
-        /[^A-Za-z0-9]/,
-        "Password must contain at least one special character",
-      ),
-    confirmPassword: z.string(),
-    terms: z
-      .boolean()
-      .refine((val) => val === true, "You must agree to the terms"),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ["confirmPassword"],
-  });
+const registerSchema = z.object({
+  full_name: z.string().min(2, "Full name must be at least 2 characters"),
+  email: z.string().email("Please enter a valid email address"),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+    .regex(/[0-9]/, "Password must contain at least one number")
+    .regex(
+      /[^A-Za-z0-9]/,
+      "Password must contain at least one special character",
+    ),
+  terms: z
+    .boolean()
+    .refine((val) => val === true, "You must agree to the terms"),
+});
 
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
-  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isSuccess, setIsSuccess] = useState(false);
-
+  const router = useRouter();
   const {
     register,
     handleSubmit,
@@ -61,11 +53,9 @@ export default function RegisterPage() {
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      firstName: "",
-      lastName: "",
+      full_name: "",
       email: "",
       password: "",
-      confirmPassword: "",
       terms: false,
     },
   });
@@ -83,30 +73,24 @@ export default function RegisterPage() {
   }, [password]);
 
   const handleRegister = async (data: RegisterFormValues) => {
-    // setIsLoading(true);
-    // setError(null);
-    // try {
-    //   const { error: authError } = await supabase.auth.signUp({
-    //     email: data.email,
-    //     password: data.password,
-    //     options: {
-    //       data: {
-    //         first_name: data.firstName,
-    //         last_name: data.lastName,
-    //         full_name: `${data.firstName} ${data.lastName}`,
-    //       },
-    //     },
-    //   });
-    //   if (authError) throw authError;
-    //   setIsSuccess(true);
-    //   setTimeout(() => {
-    //     router.push('/login');
-    //   }, 3000);
-    // } catch (err: any) {
-    //   setError(err.message || 'Failed to create account. Please try again.');
-    // } finally {
-    //   setIsLoading(false);
-    // }
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const res = await createRegisterAction(data);
+      console.log(res);
+      if (res.success) {
+        toast.success("Account created!");
+        router.push("/profile");
+      } else {
+        toast.error(res.message);
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to create account. Please try again.");
+      console.log("Error in creating register in client");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleGoogleLogin = async () => {
@@ -122,40 +106,6 @@ export default function RegisterPage() {
     //   setError(err.message || "Failed to sign in with Google.");
     // }
   };
-
-  if (isSuccess) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#FAFAFA] p-6">
-        <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center border border-[#E8E8E8]"
-        >
-          <div className="w-20 h-20 bg-[#16A34A]/10 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle size={48} className="text-[#16A34A]" />
-          </div>
-          <h1 className="font-['Playfair_Display'] text-[28px] font-bold text-[#0D0D0D] mb-3">
-            Account Created!
-          </h1>
-          <p className="text-[14px] text-[#9A9A9A] mb-8 leading-relaxed">
-            Welcome to LuxeShop! Your account has been successfully created.
-            Please check your email to verify your account.
-          </p>
-          <div className="space-y-4">
-            <p className="text-[12px] text-[#9A9A9A]">
-              Redirecting to login page...
-            </p>
-            <Link
-              href="/login"
-              className="block w-full h-[50px] bg-[#FF6B35] hover:bg-[#E55A25] text-white text-[15px] font-semibold rounded-[10px] flex items-center justify-center transition-all"
-            >
-              Sign In Now
-            </Link>
-          </div>
-        </motion.div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen grid grid-cols-1 lg:grid-cols-[40%_60%] bg-[#FAFAFA]">
@@ -332,56 +282,30 @@ export default function RegisterPage() {
 
           {/* REGISTER FORM */}
           <form onSubmit={handleSubmit(handleRegister)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div>
               <div>
                 <label className="block text-[13px] font-semibold text-[#4B4B4B] mb-1.5">
-                  First Name
+                  Full Name
                 </label>
                 <div className="relative group">
                   <User
-                    className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${errors.firstName ? "text-[#DC2626]" : "text-[#9A9A9A] group-focus-within:text-[#FF6B35]"}`}
+                    className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${errors.first_name ? "text-[#DC2626]" : "text-[#9A9A9A] group-focus-within:text-[#FF6B35]"}`}
                     size={16}
                   />
                   <input
                     type="text"
-                    {...register("firstName")}
+                    {...register("full_name")}
                     placeholder="Sarah"
                     className={`w-full h-[44px] bg-white border-[1.5px] rounded-lg pl-[42px] pr-4 text-[14px] outline-none transition-all ${
-                      errors.firstName
+                      errors.full_name
                         ? "border-[#DC2626] focus:ring-4 focus:ring-[#DC2626]/10"
                         : "border-[#E8E8E8] focus:border-[#FF6B35]"
                     }`}
                   />
                 </div>
-                {errors.firstName && (
+                {errors.full_name && (
                   <p className="text-[11px] text-[#DC2626] mt-1 font-medium">
-                    {errors.firstName.message}
-                  </p>
-                )}
-              </div>
-              <div>
-                <label className="block text-[13px] font-semibold text-[#4B4B4B] mb-1.5">
-                  Last Name
-                </label>
-                <div className="relative group">
-                  <User
-                    className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${errors.lastName ? "text-[#DC2626]" : "text-[#9A9A9A] group-focus-within:text-[#FF6B35]"}`}
-                    size={16}
-                  />
-                  <input
-                    type="text"
-                    {...register("lastName")}
-                    placeholder="Johnson"
-                    className={`w-full h-[44px] bg-white border-[1.5px] rounded-lg pl-[42px] pr-4 text-[14px] outline-none transition-all ${
-                      errors.lastName
-                        ? "border-[#DC2626] focus:ring-4 focus:ring-[#DC2626]/10"
-                        : "border-[#E8E8E8] focus:border-[#FF6B35]"
-                    }`}
-                  />
-                </div>
-                {errors.lastName && (
-                  <p className="text-[11px] text-[#DC2626] mt-1 font-medium">
-                    {errors.lastName.message}
+                    {errors.full_name.message}
                   </p>
                 )}
               </div>
@@ -479,33 +403,6 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            <div>
-              <label className="block text-[13px] font-semibold text-[#4B4B4B] mb-1.5">
-                Confirm Password
-              </label>
-              <div className="relative group">
-                <Lock
-                  className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${errors.confirmPassword ? "text-[#DC2626]" : "text-[#9A9A9A] group-focus-within:text-[#FF6B35]"}`}
-                  size={16}
-                />
-                <input
-                  type="password"
-                  {...register("confirmPassword")}
-                  placeholder="••••••••"
-                  className={`w-full h-[44px] bg-white border-[1.5px] rounded-lg pl-[42px] pr-4 text-[14px] outline-none transition-all ${
-                    errors.confirmPassword
-                      ? "border-[#DC2626] focus:ring-4 focus:ring-[#DC2626]/10"
-                      : "border-[#E8E8E8] focus:border-[#FF6B35]"
-                  }`}
-                />
-              </div>
-              {errors.confirmPassword && (
-                <p className="text-[11px] text-[#DC2626] mt-1 font-medium">
-                  {errors.confirmPassword.message}
-                </p>
-              )}
-            </div>
-
             <div className="flex items-start gap-2 mt-4 mb-6">
               <label className="flex items-start gap-2 cursor-pointer group pt-0.5">
                 <div className="relative flex items-center justify-center shrink-0">
@@ -573,11 +470,7 @@ export default function RegisterPage() {
               disabled={isLoading}
               className="w-full h-[50px] bg-[#FF6B35] hover:bg-[#E55A25] text-white text-[15px] font-semibold rounded-[10px] shadow-[0_4px_14px_rgba(255,107,53,0.35)] active:scale-[0.97] transition-all duration-200 flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              {isLoading ? (
-                <Loader2 className="animate-spin" size={20} />
-              ) : (
-                "Create Account →"
-              )}
+              {isLoading ? <>Creating...</> : "Create Account →"}
             </button>
           </form>
 

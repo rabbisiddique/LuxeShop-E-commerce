@@ -1,5 +1,6 @@
 "use client";
 
+import { createSignInAction } from "@/src/actions/public/public.auth";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   AlertCircle,
@@ -16,6 +17,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import * as z from "zod";
 
 const loginSchema = z.object({
@@ -50,21 +52,24 @@ export default function LoginPage() {
   });
 
   const handleLogin = async (data: LoginFormValues) => {
-    // setIsLoading(true);
-    // setError(null);
-    // try {
-    //   const { error: authError } = await supabase.auth.signInWithPassword({
-    //     email: data.email,
-    //     password: data.password,
-    //   });
-    //   if (authError) throw authError;
-    //   router.push('/');
-    //   router.refresh();
-    // } catch (err: any) {
-    //   setError(err.message || 'Invalid email or password. Please try again.');
-    // } finally {
-    //   setIsLoading(false);
-    // }
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await createSignInAction(data.email, data.password);
+
+      console.log(res);
+      if (res.success) {
+        toast.success(res.message);
+        router.push("/profile");
+        router.refresh();
+      } else {
+        toast.error(res.message);
+      }
+    } catch (err: any) {
+      setError(err.message || "Invalid email or password. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleGoogleLogin = async () => {

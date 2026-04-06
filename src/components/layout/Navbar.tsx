@@ -1,5 +1,6 @@
 "use client";
 
+import { useUser } from "@/src/hooks/useUser";
 import { useCartStore } from "@/src/store/cart";
 import { Heart, Menu, Search, ShoppingBag, User, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
@@ -20,11 +21,10 @@ export default function Navbar() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [user, setUser] = useState<any>(null);
 
   const openCart = useCartStore((state) => state.openCart);
   const itemCount = useCartStore((state) => state.itemCount());
-
+  const user = useUser();
   const handleCartClick = () => {
     openCart();
   };
@@ -36,18 +36,6 @@ export default function Navbar() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
-  // useEffect(() => {
-  //   supabase.auth.getUser().then(({ data: { user } }) => {
-  //     setUser(user);
-  //   });
-
-  //   const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-  //     setUser(session?.user ?? null);
-  //   });
-
-  //   return () => subscription.unsubscribe();
-  // }, []);
 
   const handleSearch = (e: FormEvent) => {
     e.preventDefault();
@@ -149,7 +137,7 @@ export default function Navbar() {
             </Link>
 
             <Link
-              href={user ? "/account" : "/login"}
+              href={user ? "/profile" : "/login"}
               className="flex items-center gap-2 p-2 text-[#1F1F1F] hover:text-[#FF6B35] transition-colors group"
             >
               <User size={20} fill={user ? "currentColor" : "none"} />
